@@ -5,7 +5,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-// import { toast } from "react-hot-toast" // (opsional)
 
 export default function BerkasPage() {
     type BerkasItem = {
@@ -32,7 +31,6 @@ export default function BerkasPage() {
             setBerkas(json)
         } catch (error) {
             console.error("Gagal mengambil data:", error)
-            // toast.error("Gagal memuat data") // opsional
         }
     }
 
@@ -45,11 +43,9 @@ export default function BerkasPage() {
                 body: JSON.stringify({ id, status, komentar }),
             })
             if (!res.ok) throw new Error(await res.text())
-            // toast.success("Status berkas diperbarui!") // opsional
             fetchData()
         } catch (error) {
             console.error("Update gagal:", error)
-            // toast.error("Gagal mengubah status") // opsional
         }
     }
 

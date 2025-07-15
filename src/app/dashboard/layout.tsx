@@ -1,45 +1,91 @@
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { redirect } from "next/navigation"
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ReactNode } from "react"
-import { getSettingValue } from "@/lib/config"
+import Image from "next/image"
+import { useSetting } from "@/hooks/useSetting"
 
-export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const session = await getServerSession(authOptions)
-  if (!session) redirect("/auth/login")
+interface SessionUser {
+  name: string
+  role: "ADMIN" | "DOSEN" | "MAHASISWA"
+}
 
-  const role = session.user.role
-  const name = session.user.name
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<SessionUser | null>(null)
+  const router = useRouter()
 
-  const namaUniversitas = await getSettingValue("nama_universitas")
-  const logoUrl = await getSettingValue("logo_url")
+  useEffect(() => {
+    const getSession = async () => {
+      try {
+        const res = await fetch("/api/auth/session")
+        const data = await res.json()
+        if (!data?.user) {
+          router.push("/auth/login")
+        } else {
+          setSession(data.user)
+        }
+      } catch (error) {
+        console.error("Failed to fetch session:", error)
+      }
+    }
+
+    getSession()
+  }, [router])
+
+  const { value: namaUniversitas, isLoading: namaLoading } = useSetting("nama_universitas")
+  const { value: logoUniversitas, isLoading: logoLoading } = useSetting("logo_url")
+
+  if (!session) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+  )
+
+  const { name, role } = session
 
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="bg-zinc-800 text-white px-6 py-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          {logoUrl && <img src={logoUrl} alt="Logo" className="h-8 w-auto" />}
-          <h1 className="font-semibold text-lg">{namaUniversitas || "Sistem Manajemen Skripsi"}</h1>
+          {logoLoading ? (
+            <div className="h-8 w-8 rounded bg-gray-300 animate-pulse"></div>
+          ) : logoUniversitas ? (
+            <div className="relative h-8 w-8">
+              <Image
+                src={logoUniversitas}
+                alt="Logo"
+                fill
+                className="rounded bg-white p-1 object-contain"
+                unoptimized={true}
+              />
+            </div>
+          ) : (
+            <div className="h-8 w-8 rounded bg-gray-300"></div>
+          )}
+
+          <h1 className="font-semibold text-lg">
+            {namaLoading ? (
+              <span className="h-4 w-40 bg-gray-300 animate-pulse block rounded"></span>
+            ) : namaUniversitas || "Sistem Manajemen Skripsi"}
+          </h1>
         </div>
+
         <div className="text-sm">
           {name} ({role}) |{" "}
           <form action="/api/auth/signout" method="POST" className="inline">
-            <button type="submit" className="underline hover:text-red-300">
-              Logout
-            </button>
+            <button type="submit" className="underline hover:text-red-300">Logout</button>
           </form>
         </div>
       </header>
 
-      {/* Main layout */}
+      {/* Layout */}
       <div className="flex flex-1">
         {/* Sidebar */}
         <aside className="w-64 bg-zinc-100 p-4 border-r space-y-2 text-sm">
           <h2 className="font-semibold mb-2">Menu {role}</h2>
           <nav className="flex flex-col space-y-1">
-            {/* ADMIN MENU */}
             {role === "ADMIN" && (
               <>
                 <Link href="/dashboard/admin">🏠 Dashboard</Link>
@@ -52,7 +98,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               </>
             )}
 
-            {/* DOSEN MENU */}
             {role === "DOSEN" && (
               <>
                 <Link href="/dashboard/dosen">🏠 Dashboard</Link>
@@ -65,7 +110,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               </>
             )}
 
-            {/* MAHASISWA MENU */}
             {role === "MAHASISWA" && (
               <>
                 <Link href="/dashboard/mahasiswa">🏠 Dashboard</Link>
