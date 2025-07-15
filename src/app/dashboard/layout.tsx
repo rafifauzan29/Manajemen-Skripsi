@@ -3,20 +3,26 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { ReactNode } from "react"
+import { getSettingValue } from "@/lib/config"
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions)
-
   if (!session) redirect("/auth/login")
 
   const role = session.user.role
   const name = session.user.name
 
+  const namaUniversitas = await getSettingValue("nama_universitas")
+  const logoUrl = await getSettingValue("logo_url")
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="bg-zinc-800 text-white px-6 py-4 flex justify-between items-center">
-        <h1 className="font-semibold text-lg">🎓 Sistem Manajemen Skripsi</h1>
+        <div className="flex items-center gap-3">
+          {logoUrl && <img src={logoUrl} alt="Logo" className="h-8 w-auto" />}
+          <h1 className="font-semibold text-lg">{namaUniversitas || "Sistem Manajemen Skripsi"}</h1>
+        </div>
         <div className="text-sm">
           {name} ({role}) |{" "}
           <form action="/api/auth/signout" method="POST" className="inline">
@@ -80,7 +86,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
       {/* Footer */}
       <footer className="bg-zinc-200 text-center py-3 text-sm text-zinc-600">
-        &copy; {new Date().getFullYear()} Kampus AI - All rights reserved.
+        &copy; {new Date().getFullYear()} {namaUniversitas || "Kampus AI"} - All rights reserved.
       </footer>
     </div>
   )

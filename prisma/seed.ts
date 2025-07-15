@@ -35,13 +35,20 @@ async function main() {
     },
   })
 
+  await prisma.setting.createMany({
+    data: [
+      { key: "nama_universitas", value: "Universitas Kampus AI" },
+      { key: "tagline", value: "Solusi Digital untuk Skripsi Mahasiswa" },
+      { key: "logo_url", value: "https://kampusai.ac.id/logo.png" },
+    ],
+    skipDuplicates: true,
+  })
+
   console.log({ admin, dosen, mahasiswa })
 }
 
 main()
-  .then(() => {
-    console.log('✅ Seeding selesai.')
-  })
+  .then(() => console.log("✅ Seeding selesai."))
   .catch((e) => {
     console.error(e)
     process.exit(1)
