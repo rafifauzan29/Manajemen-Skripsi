@@ -1,10 +1,19 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { useSetting } from "@/hooks/useSetting"
+import { cn } from "@/lib/utils"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { ChevronDown, LogOut } from "lucide-react"
 
 interface SessionUser {
   name: string
@@ -36,102 +45,136 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { value: namaUniversitas, isLoading: namaLoading } = useSetting("nama_universitas")
   const { value: logoUniversitas, isLoading: logoLoading } = useSetting("logo_url")
 
-  if (!session) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-    </div>
-  )
+  if (!session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
+  }
 
   const { name, role } = session
 
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-zinc-800 text-white px-6 py-4 flex justify-between items-center">
+      <header className="bg-[#0058a8] text-white px-6 py-3 flex justify-between items-center shadow-md h-[60px]">
         <div className="flex items-center gap-3">
           {logoLoading ? (
-            <div className="h-8 w-8 rounded bg-gray-300 animate-pulse"></div>
+            <div className="h-9 w-9 bg-zinc-300 rounded animate-pulse" />
           ) : logoUniversitas ? (
-            <div className="relative h-8 w-8">
+            <div className="relative h-9 w-9">
               <Image
                 src={logoUniversitas}
-                alt="Logo"
+                alt="Logo Universitas"
                 fill
-                className="rounded bg-white p-1 object-contain"
-                unoptimized={true}
+                className="object-contain bg-white p-1 rounded"
+                unoptimized
               />
             </div>
           ) : (
-            <div className="h-8 w-8 rounded bg-gray-300"></div>
+            <div className="h-9 w-9 bg-zinc-300 rounded" />
           )}
 
-          <h1 className="font-semibold text-lg">
-            {namaLoading ? (
-              <span className="h-4 w-40 bg-gray-300 animate-pulse block rounded"></span>
-            ) : namaUniversitas || "Sistem Manajemen Skripsi"}
+          <h1 className="font-semibold text-base md:text-lg tracking-tight">
+            {namaUniversitas || "Sistem Manajemen Skripsi"}
           </h1>
         </div>
 
-        <div className="text-sm">
-          {name} ({role}) |{" "}
-          <form action="/api/auth/signout" method="POST" className="inline">
-            <button type="submit" className="underline hover:text-red-300">Logout</button>
-          </form>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="text-white hover:bg-white/10 hover:text-white focus:text-white focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            >
+              {name} ({role})
+              <ChevronDown className="ml-1 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <form action="/api/auth/signout" method="POST">
+              <DropdownMenuItem asChild>
+                <button type="submit" className="flex items-center w-full text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </button>
+              </DropdownMenuItem>
+            </form>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
-      {/* Layout */}
-      <div className="flex flex-1">
+      {/* Body */}
+      <div className="flex flex-1 min-h-0">
         {/* Sidebar */}
-        <aside className="w-64 bg-zinc-100 p-4 border-r space-y-2 text-sm">
-          <h2 className="font-semibold mb-2">Menu {role}</h2>
-          <nav className="flex flex-col space-y-1">
+        <aside className="w-64 bg-white border-r border-zinc-200 p-4 overflow-y-auto">
+          <h2 className="text-zinc-600 font-bold text-xs uppercase mb-3 tracking-wide">
+            Menu {role}
+          </h2>
+          <nav className="space-y-1 text-sm font-medium">
             {role === "ADMIN" && (
               <>
-                <Link href="/dashboard/admin">🏠 Dashboard</Link>
-                <Link href="/dashboard/admin/users">👥 Kelola Pengguna</Link>
-                <Link href="/dashboard/admin/assign">🧑‍🏫 Penugasan Dosen</Link>
-                <Link href="/dashboard/admin/jadwal">📅 Jadwal Sidang</Link>
-                <Link href="/dashboard/admin/berkas">📎 Berkas Mahasiswa</Link>
-                <Link href="/dashboard/admin/laporan">📊 Laporan & Statistik</Link>
-                <Link href="/dashboard/admin/settings">⚙️ Pengaturan Sistem</Link>
+                <SidebarLink href="/dashboard/admin" label="🏠 Dashboard" />
+                <SidebarLink href="/dashboard/admin/users" label="👥 Kelola Pengguna" />
+                <SidebarLink href="/dashboard/admin/assign" label="🧑‍🏫 Penugasan Dosen" />
+                <SidebarLink href="/dashboard/admin/jadwal" label="📅 Jadwal Sidang" />
+                <SidebarLink href="/dashboard/admin/berkas" label="📎 Berkas Mahasiswa" />
+                <SidebarLink href="/dashboard/admin/laporan" label="📊 Laporan & Statistik" />
+                <SidebarLink href="/dashboard/admin/settings" label="⚙️ Pengaturan Sistem" />
               </>
             )}
-
             {role === "DOSEN" && (
               <>
-                <Link href="/dashboard/dosen">🏠 Dashboard</Link>
-                <Link href="/dashboard/dosen/mahasiswa">👨‍🎓 Daftar Mahasiswa</Link>
-                <Link href="/dashboard/dosen/validasi">📥 Validasi Judul Skripsi</Link>
-                <Link href="/dashboard/dosen/bimbingan">✍️ Bimbingan Mahasiswa</Link>
-                <Link href="/dashboard/dosen/revisi">📄 Revisi & Nilai</Link>
-                <Link href="/dashboard/dosen/jadwal">📅 Jadwal Sidang</Link>
-                <Link href="/dashboard/dosen/berkas">📎 Berkas Mahasiswa</Link>
+                <SidebarLink href="/dashboard/dosen" label="🏠 Dashboard" />
+                <SidebarLink href="/dashboard/dosen/mahasiswa" label="👨‍🎓 Daftar Mahasiswa" />
+                <SidebarLink href="/dashboard/dosen/validasi" label="📥 Validasi Judul Skripsi" />
+                <SidebarLink href="/dashboard/dosen/bimbingan" label="✍️ Bimbingan Mahasiswa" />
+                <SidebarLink href="/dashboard/dosen/revisi" label="📄 Revisi & Nilai" />
+                <SidebarLink href="/dashboard/dosen/jadwal" label="📅 Jadwal Sidang" />
+                <SidebarLink href="/dashboard/dosen/berkas" label="📎 Berkas Mahasiswa" />
               </>
             )}
-
             {role === "MAHASISWA" && (
               <>
-                <Link href="/dashboard/mahasiswa">🏠 Dashboard</Link>
-                <Link href="/dashboard/mahasiswa/ajukan">📝 Ajukan Judul Skripsi</Link>
-                <Link href="/dashboard/mahasiswa/skripsi">📚 Skripsi Saya</Link>
-                <Link href="/dashboard/mahasiswa/bimbingan">📋 Riwayat Bimbingan</Link>
-                <Link href="/dashboard/mahasiswa/upload">📤 Upload Dokumen</Link>
-                <Link href="/dashboard/mahasiswa/jadwal">📅 Jadwal Sidang</Link>
-                <Link href="/dashboard/mahasiswa/hasil">📊 Hasil & Revisi</Link>
+                <SidebarLink href="/dashboard/mahasiswa" label="🏠 Dashboard" />
+                <SidebarLink href="/dashboard/mahasiswa/ajukan" label="📝 Ajukan Judul Skripsi" />
+                <SidebarLink href="/dashboard/mahasiswa/skripsi" label="📚 Skripsi Saya" />
+                <SidebarLink href="/dashboard/mahasiswa/bimbingan" label="📋 Riwayat Bimbingan" />
+                <SidebarLink href="/dashboard/mahasiswa/upload" label="📤 Upload Dokumen" />
+                <SidebarLink href="/dashboard/mahasiswa/jadwal" label="📅 Jadwal Sidang" />
+                <SidebarLink href="/dashboard/mahasiswa/hasil" label="📊 Hasil & Revisi" />
               </>
             )}
           </nav>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6 bg-zinc-50">{children}</main>
+        <main className="flex-1 p-6 bg-zinc-50 overflow-y-auto">{children}</main>
       </div>
 
       {/* Footer */}
-      <footer className="bg-zinc-200 text-center py-3 text-sm text-zinc-600">
-        &copy; {new Date().getFullYear()} {namaUniversitas || "Kampus AI"} - All rights reserved.
+      <footer className="bg-[#0058a8] text-white text-xs h-[48px] flex items-center justify-center shadow-inner mt-auto">
+        &copy; {new Date().getFullYear()} {namaUniversitas || "Kampus AI"} — All rights reserved.
       </footer>
     </div>
+  )
+}
+
+function SidebarLink({ href, label }: { href: string; label: string }) {
+  const path = usePathname()
+  const isActive = path === href
+
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "block px-3 py-2 rounded-md transition",
+        isActive
+          ? "bg-[#0058a8]/10 text-[#0058a8] font-semibold"
+          : "hover:bg-zinc-100 text-zinc-700"
+      )}
+    >
+      {label}
+    </Link>
   )
 }
